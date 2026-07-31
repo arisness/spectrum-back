@@ -7,12 +7,31 @@ class UserManagement
         return result.rows;
     }
 
-    async addUser(user, email, password, profile) {await runQuery([[queries.user.registerUser, [user, email, password, profile]]]);}
-
+    async addUser(data) {
+        if (data.image) data.image = await supabaseManager.uploadImage(data.username, data.image, `${data.username}_profile_image`);
+        const values = [
+            data.username, 
+            data.email, 
+            data.password, 
+            data.profile, 
+            data.firstName, 
+            data.lastName,
+            data.image || null,
+            data.description || null];
+        await runQuery([[queries.user.registerUser, values]]);
+    }
     async addGeneralUser(req, res){
         try{
-            const {username, email, password} = req.body;
-            const r = await runQuery([[queries.user.registerGeneralUser, [username, email, password]]]);
+            if (req.body.image) req.body.image = await supabaseManager.uploadImage(req.body.username, req.body.image, `${req.body.username}_profile_image`);
+            const values = [
+                req.body.username, 
+                req.body.email, 
+                req.body.password, 
+                req.body.firstName, 
+                req.body.lastName,
+                req.body.image || null,
+                req.body.description || null];
+            const r = await runQuery([[queries.user.registerGeneralUser, values]]);
             return res.status(201).json({status: 'success', message: 'User registered successfully.'});
         }
         catch (error){
@@ -71,11 +90,19 @@ class UserManagement
     }
     async updateUserValues(req, res){
         if (sessionHandler.checkSession(req)){
-            const options = ['name', 'email'];
+            const options = ['name', 'email', 'firstName', 'lastName', 'image', 'description'];
             if(req.body.option == 0 || req.body.option == 1){
                 const userChecked = await userManagement.getUser(req.body.value);
                 if (userChecked.length > 0){
                     return res.status(400).json({status: 'error', message: `User already exists with this ${req.body.option === 0 ? 'username' : 'email'}.`});
+                }
+            }
+            if(req.body.option == 4){
+                if (req.body.value!=null) {
+                    req.body.value = await supabaseManager.uploadImage(req.session.user, req.body.value, `${req.session.user}_profile_image`);
+                } else {
+                    const userData = await runQuery([[queries.user.getImageUser, [req.session.user]]]);
+                    await supabaseManager.deleteImage(userData.rows[0].users_image);
                 }
             }
             const query = queries.user.updateValue.replace('{{var}}', options[req.body.option]);
