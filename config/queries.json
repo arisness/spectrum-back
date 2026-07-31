@@ -1,0 +1,37 @@
+{
+    "user":
+    {
+        "loginUser": "SELECT * FROM security.users WHERE (users_name = $1 OR users_email = $1) AND users_password = $2;",
+        "verifyUser": "SELECT * FROM security.users WHERE (users_name = $1 OR users_email = $1);",
+        "registerGeneralUser": "INSERT INTO security.users (users_name, users_email, users_password) VALUES ($1, $2, $3);",
+        "registerUser": "INSERT INTO security.users (users_name, users_email, users_password, fk_profile_id) VALUES ($1, $2, $3, $4);",
+        "updatePassword": "UPDATE security.users SET users_password = $1 WHERE (users_email = $2 OR users_name = $2);",
+        "deleteUser": "DELETE FROM security.users WHERE users_name = $1 OR users_email = $1;",
+        "getUser": "SELECT u.users_name, u.users_email FROM security.users AS u WHERE u.users_name = $1 OR u.users_email = $1;",
+        "updateValue":"UPDATE security.users SET users_{{var}} = $1 WHERE users_name = $2 OR users_email=$2;",
+        "getAllUsers":"SELECT u.users_name, u.users_email, p.profile_name FROM security.users u JOIN security.profile p ON u.fk_profile_id = p.profile_id"
+    },
+    "tx":
+    {
+        "permsTxQuery": "SELECT mp.fk_transaction_id AS tx_id, mp.fk_profile_id AS profile_id FROM security.method_permission AS mp;",
+        "txQuery": "SELECT t.transaction_id, m.method_name, o.object_name FROM security.transaction AS t INNER JOIN security.method AS m ON t.fk_method_id = m.method_id INNER JOIN security.object AS o ON m.fk_object_id = o.object_id;",
+        "addTxPerms": "INSERT INTO security.method_permission (fk_profile_id, fk_transaction_id) SELECT p.profile_id, t.transaction_id FROM security.profile p, security.transaction t WHERE NOT EXISTS (SELECT 1 FROM security.method_permission mp WHERE mp.fk_profile_id = p.profile_id AND mp.fk_transaction_id = t.transaction_id) AND p.profile_id = $1 AND t.transaction_id = $2;",
+        "deleteTxPerms": "DELETE FROM security.method_permission WHERE fk_profile_id = $1 AND fk_transaction_id = $2;"
+    },
+    "option":
+    {
+        "optionsQuery": "SELECT op.option_id, op.option_name, op.option_function, op.option_params, op.option_async, op.option_generic, co.component_name FROM security.option AS op INNER JOIN security.component AS co On op.fk_component_id = co.component_id;",
+        "permsOptQuery": "SELECT op.fk_option_id AS option_id, op.fk_profile_id AS profile_id FROM security.option_permission as op;",
+        "addOptPerms": "INSERT INTO security.option_permission (fk_profile_id, fk_option_id) SELECT p.profile_id, o.option_id FROM security.profile p, security.option o WHERE NOT EXISTS (SELECT 1 FROM security.option_permission op WHERE op.fk_profile_id = p.profile_id AND op.fk_option_id = o.option_id) AND p.profile_id = $1 AND o.option_id = $2;",
+        "deleteOptPerms": "DELETE FROM security.option_permission WHERE fk_profile_id = $1 AND fk_option_id = $2;"
+    },
+    "profile":
+    {
+        "getProfiles": "SELECT profile_id AS id, profile_name AS name FROM security.profile;",
+        "addProfile": "INSERT INTO security.profile (profile_name) VALUES ($1);",
+        "deleteProfile": "DELETE FROM security.profile WHERE profile_name = $1;"
+    },
+    "whereIsThisUsed?":{
+        "verifyDuplicate": "SELECT u.users_name, u.users_email FROM security.users AS u WHERE u.users_name = $1 OR u.users_email = $2;"
+    }
+}
