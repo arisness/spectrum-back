@@ -36,8 +36,8 @@
     },
     "interaction":{
         "addInteraction":"INSERT INTO chat.interaction (fk_users_one, fk_users_two, interaction_type) VALUES ($1, $2, $3);",
-        "getLiked":"SELECT * FROM chat.interaction WHERE ((fk_users_one = $1 AND fk_users_two = $2) OR (fk_users_one = $2 AND fk_users_two = $1)) AND interaction_type = 1;",
-        "getDisliked":"SELECT * FROM chat.interaction WHERE ((fk_users_one = $1 AND fk_users_two = $2) OR (fk_users_one = $2 AND fk_users_two = $1)) AND interaction_type = 0;",
+        "getLiked":"SELECT * FROM chat.interaction WHERE ((fk_users_one = $1) OR (fk_users_one = $2)) AND interaction_type = 1;",
+        "getDisliked":"SELECT * FROM chat.interaction WHERE ((fk_users_one = $1) OR (fk_users_one = $2)) AND interaction_type = 0;",
         "updateInteraction":"UPDATE chat.interaction SET interaction_type = $1 WHERE (fk_users_one = $2 AND fk_users_two = $3) OR (fk_users_one = $3 AND fk_users_two = $2);"
     },
     "chat":{
