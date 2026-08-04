@@ -17,7 +17,8 @@ class UserManagement
             data.firstName, 
             data.lastName,
             data.image || null,
-            data.description || null];
+            data.description || null,
+            data.birthday];
         await runQuery([[queries.user.registerUser, values]]);
     }
     async addGeneralUser(req, res){
@@ -30,7 +31,8 @@ class UserManagement
                 req.body.firstName, 
                 req.body.lastName,
                 req.body.image || null,
-                req.body.description || null];
+                req.body.description || null,
+                req.body.birthday];
             const r = await runQuery([[queries.user.registerGeneralUser, values]]);
             return res.status(201).json({status: 'success', message: 'User registered successfully.'});
         }
@@ -90,7 +92,7 @@ class UserManagement
     }
     async updateUserValues(req, res){
         if (sessionHandler.checkSession(req)){
-            const options = ['name', 'email', 'firstName', 'lastName', 'image', 'description'];
+            const options = ['name', 'email', 'firstName', 'lastName', 'image', 'description', 'birthday'];
             if(req.body.option == 0 || req.body.option == 1){
                 const userChecked = await userManagement.getUser(req.body.value);
                 if (userChecked.length > 0){
