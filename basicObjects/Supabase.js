@@ -43,7 +43,7 @@ class SupabaseManager{
         const contentType = await this.#detectContentType(bufferImage);
         bufferImage = Buffer.from(bufferImage, 'base64');
         const { data, error } = await supabase.storage
-            .from('infused')
+            .from('spectrum')
             .upload(`users/${userName}/${imageName}.${contentType.split('/')[1]}`, bufferImage, {
                 cacheControl: '3600',
                 contentType: contentType,
@@ -54,7 +54,7 @@ class SupabaseManager{
             logger.error(`Error uploading image: ${error.message}`);
         }
         const { data: publicUrlData } = supabase.storage
-            .from('infused')
+            .from('spectrum')
             .getPublicUrl(`users/${userName}/${imageName}.${contentType.split('/')[1]}`);
 
         return publicUrlData.publicUrl;
@@ -63,11 +63,11 @@ class SupabaseManager{
     async deleteImage(url){
         try{
             const path = url
-            .replace(/.*\/public\/infused\//, '')
-            .replace(/.*\/infused\//, '');
+            .replace(/.*\/public\/spectrum\//, '')
+            .replace(/.*\/spectrum\//, '');
             console.log(path);
             const { data, error } = await supabase.storage
-                .from('infused')
+                .from('spectrum')
                 .remove([path]);
             if (error) {
                 throw error;
