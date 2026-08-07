@@ -1,10 +1,11 @@
 // websocket-server.js
 import { WebSocketServer } from 'ws';
-
+import { ChatHandler } from '../businessObjects/ChatHandler';
 const clients = new Map();
 const waitingMessages = new Map();
 
 function createWebSocketServer(server) {
+    const chatHandler = new ChatHandler();
     const wss = new WebSocketServer({ server });
 
     wss.on('connection', (ws, req) => {
@@ -37,6 +38,7 @@ function createWebSocketServer(server) {
                     type: 'private',
                     from: msg.from,
                     content: msg.content,
+                    isImage: msg.isImage,
                     timestamp: msg.timestamp
                 }));
             });
@@ -49,6 +51,7 @@ function createWebSocketServer(server) {
                 const receiver = message.receiver;
                 const content = message.content;
                 const sender = userId;
+                const isImage = message.isImage || false;
 
                 if (!receiver || !content) {
                     ws.send(JSON.stringify({
@@ -68,8 +71,15 @@ function createWebSocketServer(server) {
                     waitingMessages.get(receiver).push({
                         from: sender,
                         content,
+                        isImage: isImage,
                         timestamp: Date.now()
                     });
+
+                    if (isImage) {
+                        chatHandler.sendImage({ userSession: sender, userReceiver: receiver, image: content });
+                    } else {
+                        chatHandler.sendMessage({ userSession: sender, userReceiver: receiver, message: content });
+                    }
 
                     ws.send(JSON.stringify({
                         type: 'info',
@@ -80,6 +90,7 @@ function createWebSocketServer(server) {
 
                 receiverClient.ws.send(JSON.stringify({
                     type: 'private',
+                    isImage: isImage,
                     from: sender,
                     content,
                     timestamp: Date.now()
