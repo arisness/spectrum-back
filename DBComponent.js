@@ -7,7 +7,7 @@ const {DB_USERNAME, DB_PASSWORD, DB_NAME, DB_HOST, DB_PORT} = process.env;
 const pool = new Pool
 ({
     connectionString: `postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`,
-    ssl: false //false for local development, set to true and provide certs for production
+    ssl: true //false for local development, set to true and provide certs for production
 });
 
 /**
