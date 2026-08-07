@@ -1,6 +1,6 @@
 // websocket-server.js
 import { WebSocketServer } from 'ws';
-import { ChatHandler } from '../businessObjects/ChatHandler';
+import { ChatHandler } from '../businessObjects/ChatHandler.js';
 const clients = new Map();
 const waitingMessages = new Map();
 
