@@ -1,0 +1,112 @@
+// websocket-server.js
+import { WebSocketServer } from 'ws';
+
+const clients = new Map();
+const waitingMessages = new Map();
+
+function createWebSocketServer(server) {
+    const wss = new WebSocketServer({ server });
+
+    wss.on('connection', (ws, req) => {
+        const session = req.session;
+
+        const userId = session?.user || null;
+
+        if (!session || !userId) {
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'No autenticado'
+            }));
+            ws.close();
+            return;
+        }
+
+        clients.set(userId, { ws, userId });
+
+        console.log(`Cliente ${userId} conectado`);
+
+        ws.send(JSON.stringify({
+            type: 'connected',
+            clientId: userId
+        }));
+
+        if (waitingMessages.has(userId)) {
+            const pendingMessages = waitingMessages.get(userId);
+            pendingMessages.forEach((msg) => {
+                ws.send(JSON.stringify({
+                    type: 'private',
+                    from: msg.from,
+                    content: msg.content,
+                    timestamp: msg.timestamp
+                }));
+            });
+            waitingMessages.delete(userId);
+        }
+
+        ws.on('message', (data) => {
+            try {
+                const message = JSON.parse(data);
+                const receiver = message.receiver;
+                const content = message.content;
+                const sender = userId;
+
+                if (!receiver || !content) {
+                    ws.send(JSON.stringify({
+                        type: 'error',
+                        message: 'receiver y content son requeridos'
+                    }));
+                    return;
+                }
+
+                const receiverClient = clients.get(receiver);
+
+                if (!receiverClient) {
+                    if (!waitingMessages.has(receiver)) {
+                        waitingMessages.set(receiver, []);
+                    }
+
+                    waitingMessages.get(receiver).push({
+                        from: sender,
+                        content,
+                        timestamp: Date.now()
+                    });
+
+                    ws.send(JSON.stringify({
+                        type: 'info',
+                        message: 'Cliente destino no conectado. Mensaje guardado para entrega futura.'
+                    }));
+                    return;
+                }
+
+                receiverClient.ws.send(JSON.stringify({
+                    type: 'private',
+                    from: sender,
+                    content,
+                    timestamp: Date.now()
+                }));
+
+                ws.send(JSON.stringify({
+                    type: 'sent',
+                    to: receiver,
+                    content,
+                    timestamp: Date.now()
+                }));
+            } catch (error) {
+                console.error('Error procesando mensaje:', error);
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    message: 'Error procesando mensaje'
+                }));
+            }
+        });
+
+        ws.on('close', () => {
+            console.log(`Cliente ${userId} desconectado`);
+            clients.delete(userId);
+        });
+    });
+
+    return wss;
+}
+
+export default createWebSocketServer;

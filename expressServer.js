@@ -3,9 +3,11 @@ import userRoutes from './routes/userRoutes.js';
 import {runQuery} from './DBComponent.js';
 import * as classes from './modules/classesIndex.js';
 import {executeMethod} from './executeMethod.js';
-//import supabaseManager from './basicObjects/Supabase.js';
+import supabaseManager from './basicObjects/Supabase.js';
 import fs from 'fs';
 import { loadEnvFile } from 'process';
+import createWebSocketServer from './basicObjects/WebSocket.js';
+import http from 'http';
 loadEnvFile('./config/.env');
 const app = express();
 const {HOST_IP, HOST_PORT} = process.env;
@@ -81,4 +83,14 @@ app.post('/toProcess', async (req, res) =>
 
 //const httpsServer = https.createServer(credentials, app);
 //httpsServer.listen(HOST_PORT, () => {console.clear(); console.log(`Server running on https://${HOST_IP}:${HOST_PORT}`);});
-app.listen(HOST_PORT, () => {console.clear(); console.log(`Server running on http://${HOST_IP}:${HOST_PORT}`);});
+//app.listen(HOST_PORT, () => {console.clear(); console.log(`Server running on http://${HOST_IP}:${HOST_PORT}`);});
+
+const server = http.createServer(app);
+
+const wsServer = createWebSocketServer(server);
+app.locals.wsServer = wsServer;
+
+server.listen(HOST_PORT, HOST_IP, () => {
+    console.log(`Server running on http://${HOST_IP}:${HOST_PORT}`);
+    console.log(`WebSocket running on ws://${HOST_IP}:${HOST_PORT}`);
+})
