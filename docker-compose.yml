@@ -1,0 +1,46 @@
+# ==============================================
+#  PRODUCTION APP STACK
+#  - API Service (Binds Traefik routing -> App)
+# ==============================================
+
+services:
+  api:
+    # Pulls the branch name as the image tag
+    image: ghcr.io/arisness/spectrum:${IMAGE_TAG}
+    # Prefix containers with the business name
+    container_name: spectrum-api-1
+    restart: unless-stopped
+    networks:
+      - web-network       # For Traefik
+      - internal-network  # For internal communication
+    volumes:
+      - ./config/.env:/app/config/.env:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: 5
+    environment:
+      - APP_ENV=production
+    labels:
+      # Expose this container
+      - "traefik.enable=true"
+
+      # Catch every request that starts with /api
+      - "traefik.http.routers.spectrum-api.rule=Host(`spectrum.kaucrow.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.spectrum-api.entrypoints=websecure"
+      - "traefik.http.routers.spectrum-api.tls=true"
+      - "traefik.http.routers.spectrum-api.tls.certresolver=certresolver"
+
+      # Strip "/api" off the front of every path
+      - "traefik.http.middlewares.spectrum-api-strip.stripprefix.prefixes=/api"
+      - "traefik.http.routers.spectrum-api.middlewares=spectrum-api-strip"
+
+      # Forward the stripped request to the app port
+      - "traefik.http.services.spectrum-api.loadbalancer.server.port=3001"
+
+networks:
+  web-network:
+    external: true  # Use the Traefik bridge
+  internal-network:
+    driver: bridge  # Private local virtual network bridge
