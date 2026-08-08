@@ -9,8 +9,8 @@ function createWebSocketServer(server) {
     const wss = new WebSocketServer({ server });
 
     wss.on('connection', (ws, req) => {
-        console.log('Recibiendo conexión WebSocket');
         const session = req.session;
+        console.log(session);
 
         const userId = session?.user || null;
 
