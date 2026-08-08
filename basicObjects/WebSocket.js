@@ -62,70 +62,78 @@ function createWebSocketServer(server, session) {
         }
 
         ws.on('message', (data) => {
+        try {
+            const message = JSON.parse(data);
+            const receiver = message.receiver;
+            const content = message.content;
+            const sender = userId;
+            const isImage = message.isImage || false;
+
+            if (!receiver || !content) {
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    message: 'receiver y content son requeridos'
+                }));
+                return;
+            }
+
+            const receiverClient = clients.get(receiver);
+
+            if (!receiverClient || receiverClient.ws.readyState !== WebSocket.OPEN) {
+                clients.delete(receiver);
+
+                if (!waitingMessages.has(receiver)) {
+                    waitingMessages.set(receiver, []);
+                }
+
+                waitingMessages.get(receiver).push({
+                    from: sender,
+                    content,
+                    isImage,
+                    timestamp: Date.now()
+                });
+
+                if (isImage) {
+                    chatHandler.sendImage({ userSession: sender, userReceiver: receiver, image: content });
+                } else {
+                    chatHandler.sendMessage({ userSession: sender, userReceiver: receiver, message: content });
+                }
+
+                ws.send(JSON.stringify({
+                    type: 'info',
+                    message: 'Cliente destino no conectado. Mensaje guardado para entrega futura.'
+                }));
+                return;
+            }
+
             try {
-                const message = JSON.parse(data);
-                const receiver = message.receiver;
-                const content = message.content;
-                const sender = userId;
-                const isImage = message.isImage || false;
-
-                if (!receiver || !content) {
-                    ws.send(JSON.stringify({
-                        type: 'error',
-                        message: 'receiver y content son requeridos'
-                    }));
-                    return;
-                }
-
-                const receiverClient = clients.get(receiver);
-
-                if (!receiverClient) {
-                    if (!waitingMessages.has(receiver)) {
-                        waitingMessages.set(receiver, []);
-                    }
-
-                    waitingMessages.get(receiver).push({
-                        from: sender,
-                        content,
-                        isImage: isImage,
-                        timestamp: Date.now()
-                    });
-
-                    if (isImage) {
-                        chatHandler.sendImage({ userSession: sender, userReceiver: receiver, image: content });
-                    } else {
-                        chatHandler.sendMessage({ userSession: sender, userReceiver: receiver, message: content });
-                    }
-
-                    ws.send(JSON.stringify({
-                        type: 'info',
-                        message: 'Cliente destino no conectado. Mensaje guardado para entrega futura.'
-                    }));
-                    return;
-                }
-
                 receiverClient.ws.send(JSON.stringify({
                     type: 'private',
-                    isImage: isImage,
+                    isImage,
                     from: sender,
                     content,
                     timestamp: Date.now()
                 }));
-
-                ws.send(JSON.stringify({
-                    type: 'sent',
-                    to: receiver,
-                    content,
-                    timestamp: Date.now()
-                }));
-            } catch (error) {
-                console.error('Error procesando mensaje:', error);
-                ws.send(JSON.stringify({
-                    type: 'error',
-                    message: 'Error procesando mensaje'
-                }));
+            } catch (sendError) {
+                console.error('Error enviando al receptor:', sendError);
+                ws.send(JSON.stringify({ type: 'error', message: 'No se pudo entregar el mensaje.' }));
+                return;
             }
-        });
+
+            ws.send(JSON.stringify({
+                type: 'sent',
+                to: receiver,
+                content,
+                timestamp: Date.now()
+            }));
+        } catch (error) {
+            console.error('Error procesando mensaje:', error);
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'Error procesando mensaje'
+            }));
+        }
+    });
 
         ws.on('close', () => {
             console.log(`Cliente ${userId} desconectado`);
