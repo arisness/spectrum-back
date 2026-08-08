@@ -87,7 +87,8 @@ app.post('/toProcess', async (req, res) =>
 
 const server = http.createServer(app);
 
-const wsServer = createWebSocketServer(server);
+const sessionParser = global.sessionHandler.getMiddleware();
+const wsServer = createWebSocketServer(server, sessionParser);
 app.locals.wsServer = wsServer;
 
 server.listen(HOST_PORT, HOST_IP, () => {

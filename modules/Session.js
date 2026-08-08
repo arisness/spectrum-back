@@ -3,9 +3,22 @@ export default class Session
 {
     constructor(app)
     {
-       app.use(session({secret: 'web2-project', resave: false, saveUninitialized: false,
-            cookie: {maxAge: 24 * 60 * 60 * 1000, httpOnly: true, secure: false, sameSite: 'none'}}));
-        
+        this.sessionMiddleware = session({
+            secret: 'web2-project',
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                maxAge: 24 * 60 * 60 * 1000,
+                httpOnly: true,
+                secure: false,
+                sameSite: 'lax'
+            }
+        });
+        app.use(this.sessionMiddleware);
+    }
+
+    getMiddleware() {
+        return this.sessionMiddleware;
     }
 
     checkSession(req) {return req.session && req.session.user && req.session.profile;}

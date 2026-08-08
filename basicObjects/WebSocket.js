@@ -4,9 +4,23 @@ import { ChatHandler } from '../businessObjects/ChatHandler.js';
 const clients = new Map();
 const waitingMessages = new Map();
 
-function createWebSocketServer(server) {
+function createWebSocketServer(server, session) {
     const chatHandler = new ChatHandler();
-    const wss = new WebSocketServer({ server });
+    const wss = new WebSocketServer({ noServer: true });
+
+    server.on('upgrade', (req, socket, head) => {
+        session(req, {}, () => {
+            if (!req.session || !req.session.user) {
+                socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                socket.destroy();
+                return;
+            }
+
+            wss.handleUpgrade(req, socket, head, (ws) => {
+                wss.emit('connection', ws, req);
+            });
+        });
+    });
 
     wss.on('connection', (ws, req) => {
         const session = req.session;
