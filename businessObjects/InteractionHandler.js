@@ -42,4 +42,37 @@ export class InteractionHandler {
         }
 
     }
+
+    async getUsers(data){
+        try{
+            const likedUsers = await this.getLiked(data);
+            const dislikedUsers = await this.getDisliked(data);
+            const result = await runQuery([[queries.interaction.getRandomUsers, [data.userSession, 10]]]);
+            const allUsers = result.rows;
+
+            // Combinar usuarios con interacción
+            const interactedUsers = new Set([
+                ...likedUsers.flatMap(user => 
+                    user.fk_users_one === data.userSession ? [user.fk_users_two] : 
+                    user.fk_users_two === data.userSession ? [user.fk_users_one] : []
+                ),
+                ...dislikedUsers.flatMap(user => 
+                    user.fk_users_one === data.userSession ? [user.fk_users_two] : 
+                    user.fk_users_two === data.userSession ? [user.fk_users_one] : []
+                )
+            ]);
+
+            // Filtrar usuarios
+            const filteredUsers = allUsers.filter(user => 
+                user.users_name !== data.userSession && 
+                !interactedUsers.has(user.users_name)
+            );
+
+            return filteredUsers;
+        }
+        catch (error){
+            logger.error(`Error fetching users: ${error}`);
+            return 'Internal server error during fetching users.';
+        }
+    }
 }
