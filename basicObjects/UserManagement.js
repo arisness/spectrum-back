@@ -88,6 +88,7 @@ class UserManagement
 
     async getUser(username){
         const results = await runQuery([[queries.user.getUser, [username]]]);
+        results.rows.users_birthday = results.rows.users_birthday.toISOString().split('T')[0];
         return results.rows;
     }
     async updateUserValues(req, res){

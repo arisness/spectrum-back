@@ -40,6 +40,7 @@ export default class Session
             if (authResult.success)
             {
                 const userData = await runQuery([[queries.user.getUser, [req.session.user]]]);
+                userData.rows[0].users_birthday = userData.rows[0].users_birthday.toISOString().split('T')[0];
                 return res.status(200).json({status: 'success', data: userData.rows[0]});
             }
             else return res.status(401).json({status: 'error', message: authResult.message, user: '', profile: ''});
