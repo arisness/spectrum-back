@@ -93,7 +93,7 @@ class UserManagement
     }
     async updateUserValues(req, res){
         if (sessionHandler.checkSession(req)){
-            const options = ['name', 'email', 'firstName', 'lastName', 'image', 'description', 'birthday'];
+            const options = ['name', 'email', 'first_name', 'last_name', 'image', 'description', 'birthday'];
             if(req.body.option == 0 || req.body.option == 1){
                 const userChecked = await userManagement.getUser(req.body.value);
                 if (userChecked.length > 0){
