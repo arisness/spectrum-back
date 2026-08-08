@@ -24,7 +24,6 @@ function createWebSocketServer(server, session) {
 
     wss.on('connection', (ws, req) => {
         const session = req.session;
-        console.log(session);
 
         const userId = session?.user || null;
 
